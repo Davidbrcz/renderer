@@ -1,15 +1,11 @@
 module Main where
 
-
+import System.Environment
 import System.IO
 import qualified Text.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Char -- for letter
 -- import Text.Parsec.Char
 import Text.Parsec
-
-
- -- import Text.Parsec.Prim
- -- import Text.Parsec.Combinator
 
 
 import Lib
@@ -18,8 +14,7 @@ data Dot = Undirected Id  Stmts
          | Directed Id  Stmts
          deriving (Show)
 
-data Stmt = NodeStmt Id
-            -- Attributes
+data Stmt = NodeStmt Id Attributes
           deriving (Show)
 type Stmts = [Stmt]
 
@@ -36,6 +31,8 @@ dotDef = P.LanguageDef
   , P.identLetter     = alphaNum
   , P.reservedNames   = ["node", "edge", "graph", "digraph", "subgraph", "strict" ]
   , P.caseSensitive   = True
+  , P.opStart         = oneOf "=-"
+  , P.opLetter        = oneOf "->"
   }
 
 
@@ -49,51 +46,45 @@ identifier  = P.identifier lexer
 reserved    = P.reserved lexer
 
 semi = P.semi lexer
--- comma = char ','
--- open_curly = char '{'
--- close_curly = char '}'
--- open_bracket = char '['
--- close_bracket = char ']'
--- identifier  = many1 letter
+comma = P.comma lexer
+
+reservedOp = P.reservedOp lexer
+
+eq_op = reservedOp "="
+undir_edge_op = reservedOp "--"
+dir_edge_op = reservedOp "->"
 
 -- -- edge_stmt
 
 -- -- -> Attribute
--- attribute = do
---   spaces
---   id1 <- identifier
---   spaces
---   char '='
---   id2 <- identifier
---   spaces
---   optional (semi <|> comma)
---   return $ Attribute id1 id2
+attribute = do
+  id1 <- identifier
+  eq_op
+  id2 <- identifier
+  optional (semi <|> comma)
+  return $ Attribute id1 id2
 
--- -- -> [Attribute]
--- a_list = many attribute
+a_list = many attribute
 
--- -- -> [Attribute]
--- bracked_alist = between (spaces >> open_bracket >> spaces) (spaces >> close_bracket >> spaces) (option [] a_list)
+bracked_alist =
+  brackets $ option [] a_list
 
-
--- attributes =
---   do
---     nestedAttributes <- many1 bracked_alist -- [[Attribute]]
---     return $ concat nestedAttributes
+attributes =
+  do
+    nestedAttributes <- many1 bracked_alist -- [[Attribute]]
+    return $ concat nestedAttributes
 
 
 nodeStmt = do
   nodeName <- identifier
-  -- attr <- option [] attributes
-  return $ NodeStmt nodeName -- attr
+  attr <- option [] attributes
+  return $ NodeStmt nodeName attr
 
 stmt = do
   x <- nodeStmt
-  spaces
   optional semi
   return x
 
--- stmt_list = stmt `sepEndBy` semi
 stmt_list = many stmt
 graphDecl = do
   reserved "graph"
@@ -112,7 +103,9 @@ topLevel3 = do
   graphDecl <|> digraphDecl
 
 main :: IO ()
-main =
-  case parse topLevel3 "" "digraph foo{  a b ;   c  ; e}" of
+main = do
+  (file:_) <- getArgs
+  content <- readFile file
+  case parse topLevel3 "" content of
     Right g -> print g
     Left err -> print err
