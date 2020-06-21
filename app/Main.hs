@@ -4,9 +4,8 @@ import System.Environment
 import System.IO
 import qualified Text.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Char -- for letter
--- import Text.Parsec.Char
 import Text.Parsec
-
+import qualified Control.Applicative as App
 
 import Lib
 type Id = String
@@ -14,9 +13,13 @@ data Dot = Undirected Id  Stmts
          | Directed Id  Stmts
          deriving (Show)
 
-data Stmt = NodeStmt Id Attributes
+data Stmt = NodeStmt Node | EdgeStmt Edges
           deriving (Show)
 type Stmts = [Stmt]
+
+data Node = Node Id Attributes deriving (Show)
+data Edge =  Edge Id Id deriving (Show)
+type Edges = [Edge]
 
 data Attribute = Attribute Id Id deriving (Show)
 type Attributes = [Attribute]
@@ -31,7 +34,7 @@ dotDef = P.LanguageDef
   , P.identLetter     = alphaNum
   , P.reservedNames   = ["node", "edge", "graph", "digraph", "subgraph", "strict" ]
   , P.caseSensitive   = True
-  , P.opStart         = oneOf "=-"
+  , P.opStart         = oneOf "-="
   , P.opLetter        = oneOf "->"
   }
 
@@ -54,9 +57,9 @@ eq_op = reservedOp "="
 undir_edge_op = reservedOp "--"
 dir_edge_op = reservedOp "->"
 
--- -- edge_stmt
+edge_op = undir_edge_op <|> dir_edge_op
 
--- -- -> Attribute
+-- -> Attribute
 attribute = do
   id1 <- identifier
   eq_op
@@ -71,17 +74,24 @@ bracked_alist =
 
 attributes =
   do
-    nestedAttributes <- many1 bracked_alist -- [[Attribute]]
+    nestedAttributes <- many1 bracked_alist
     return $ concat nestedAttributes
 
 
 nodeStmt = do
   nodeName <- identifier
   attr <- option [] attributes
-  return $ NodeStmt nodeName attr
+  return $ NodeStmt $ Node nodeName attr
+
+dropLast = reverse . tail . reverse
+
+edgeStmt = do
+  nodes <- identifier `sepBy1` edge_op
+  return $ EdgeStmt $ fmap (\x -> Edge (fst x) (snd x)) (zip (tail nodes) (dropLast nodes))
+
 
 stmt = do
-  x <- nodeStmt
+  x <- nodeStmt <|> edgeStmt
   optional semi
   return x
 
