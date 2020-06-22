@@ -6,6 +6,7 @@ import qualified Text.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Char -- for letter
 import Text.Parsec
 import qualified Control.Applicative as App
+import Control.Monad (guard)
 
 import Lib
 type Id = String
@@ -36,6 +37,7 @@ dotDef = P.LanguageDef
   , P.caseSensitive   = True
   , P.opStart         = oneOf "-="
   , P.opLetter        = oneOf "->"
+  , P.reservedOpNames = []
   }
 
 
@@ -87,11 +89,11 @@ dropLast = reverse . tail . reverse
 
 edgeStmt = do
   nodes <- identifier `sepBy1` edge_op
-  return $ EdgeStmt $ fmap (\x -> Edge (fst x) (snd x)) (zip (tail nodes) (dropLast nodes))
-
+  guard $ length nodes > 1
+  return $ EdgeStmt $ zipWith Edge (init nodes) (tail nodes)
 
 stmt = do
-  x <- nodeStmt <|> edgeStmt
+  x <- try edgeStmt  <|>  nodeStmt
   optional semi
   return x
 
