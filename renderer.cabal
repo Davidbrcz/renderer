@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a7fbcb1aadde90c4b72afb8668672cae0473c22c71e3897b90f62734ca5b210f
+-- hash: 3879bedd29c5b41881097f6cd2d7dd068b1d7f78e96dfa43f7bf344e38361600
 
 name:           renderer
 version:        0.1.0.0
@@ -27,7 +27,7 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      Parse
   other-modules:
       Paths_renderer
   hs-source-dirs:
