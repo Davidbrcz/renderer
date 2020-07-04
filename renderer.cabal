@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3879bedd29c5b41881097f6cd2d7dd068b1d7f78e96dfa43f7bf344e38361600
+-- hash: 608ef6657f7cb1a9102eb03e27210fa35eb8b27b10b07bb54f9e970b7736a307
 
 name:           renderer
 version:        0.1.0.0
@@ -28,12 +28,16 @@ source-repository head
 library
   exposed-modules:
       Parse
+      Spectral
   other-modules:
       Paths_renderer
   hs-source-dirs:
       src
   build-depends:
-      base >=4.7 && <5
+      apecs
+    , base >=4.7 && <5
+    , hmatrix
+    , linear
     , parsec
   default-language: Haskell2010
 
@@ -45,7 +49,10 @@ executable renderer-exe
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      apecs
+    , base >=4.7 && <5
+    , hmatrix
+    , linear
     , parsec
     , renderer
   default-language: Haskell2010
@@ -59,7 +66,10 @@ test-suite renderer-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      apecs
+    , base >=4.7 && <5
+    , hmatrix
+    , linear
     , parsec
     , renderer
   default-language: Haskell2010
